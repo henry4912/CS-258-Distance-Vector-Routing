@@ -1,18 +1,18 @@
 import java.util.*;
 
-public class Node {
+public class NodeDVR {
     public static final int INF = 9999;
 
     private String name;
     private Map<String, Integer> neighbors;
-    private Map<String, RouteEntry> routingTable;
+    private Map<String, RouteEntryDVR> routingTable;
 
-    public Node(String name) {
+    public NodeDVR(String name) {
         this.name = name;
         this.neighbors = new HashMap<>();
         this.routingTable = new HashMap<>();
 
-        routingTable.put(name, new RouteEntry(name, name, 0));
+        routingTable.put(name, new RouteEntryDVR(name, name, 0));
     }
 
     public String getName() {
@@ -21,12 +21,12 @@ public class Node {
 
     public void addNeighbor(String neighborName, int cost) {
         neighbors.put(neighborName, cost);
-        routingTable.put(neighborName, new RouteEntry(neighborName, neighborName, cost));
+        routingTable.put(neighborName, new RouteEntryDVR(neighborName, neighborName, cost));
     }
 
     public Map<String, Integer> createDistanceVector() {
         Map<String, Integer> distanceVector = new HashMap<>();
-        for (RouteEntry entry : routingTable.values()) {
+        for (RouteEntryDVR entry : routingTable.values()) {
             distanceVector.put(entry.getDestination(), entry.getCost());
         }
         return distanceVector;
@@ -54,7 +54,7 @@ public class Node {
                 }
             }
 
-            RouteEntry current = routingTable.get(destination);
+            RouteEntryDVR current = routingTable.get(destination);
 
             boolean shouldUpdate = current == null || newCost < current.getCost() || current.getNextHop().equals(neighborName);
 
@@ -62,7 +62,7 @@ public class Node {
                 boolean isActuallyDifferent = current == null || current.getCost() != newCost || !current.getNextHop().equals(neighborName);
 
                 if (isActuallyDifferent) {
-                    routingTable.put(destination, new RouteEntry(destination, neighborName, newCost));
+                    routingTable.put(destination, new RouteEntryDVR(destination, neighborName, newCost));
                     changed = true;
                 }
             }
@@ -73,7 +73,7 @@ public class Node {
 
     public void printRoutingTable() {
         System.out.println("Routing table for node " + name + ":");
-        for (RouteEntry entry : routingTable.values()) {
+        for (RouteEntryDVR entry : routingTable.values()) {
             System.out.println(entry);
         }
     }
@@ -81,15 +81,15 @@ public class Node {
     public void removeNeighbor(String neighborName) {
         neighbors.remove(neighborName);
 
-        for (Map.Entry<String, RouteEntry> entry : routingTable.entrySet()) {
-            RouteEntry route = entry.getValue();
+        for (Map.Entry<String, RouteEntryDVR> entry : routingTable.entrySet()) {
+            RouteEntryDVR route = entry.getValue();
 
             if (route.getNextHop().equals(neighborName)) {
                 route.setCost(INF);
             }
         }
 
-        routingTable.put(name, new RouteEntry(name, name, 0));
+        routingTable.put(name, new RouteEntryDVR(name, name, 0));
     }
 
     public boolean isNeighbor(String neighborName) {

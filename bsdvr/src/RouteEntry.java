@@ -1,12 +1,20 @@
 public class RouteEntry {
+
+    public enum State {
+        ACTIVE,
+        INACTIVE
+    }
+
     private String destination;
     private String nextHop;
     private int cost;
+    private State state;
 
-    public RouteEntry(String destination, String nextHop, int cost) {
+    public RouteEntry(String destination, String nextHop, int cost, State state) {
         this.destination = destination;
         this.nextHop = nextHop;
         this.cost = cost;
+        this.state = state;
     }
 
     //Getters
@@ -22,6 +30,10 @@ public class RouteEntry {
         return cost;
     }
 
+    public State getState() {
+        return state;
+    }
+
     //setters
     public void setNextHop(String nextHop) {
         this.nextHop = nextHop;
@@ -31,8 +43,12 @@ public class RouteEntry {
         this.cost = cost;
     }
 
+    public void setState(State state) {
+        this.state = state;
+    }
+
     @Override
     public String toString() {
-        return "dest: " + destination + ", nextHop: " + nextHop + ", cost: " + cost;
+        return "dest: " + destination + ", nextHop: " + nextHop + ", cost: " + cost + ", state: " + state;
     }
 }
