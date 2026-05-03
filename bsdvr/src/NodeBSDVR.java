@@ -62,7 +62,11 @@ public class NodeBSDVR {
     }
     public int getCostTo(String dest) {
         RouteEntryBSDVR e = routingTable.get(dest);
-        return (e == null) ? INF : e.getCost();
+        if (e == null) {
+            return INF;
+        } else {
+            return e.getCost();
+        }
     }
     public boolean isActiveTo(String dest) {
         RouteEntryBSDVR e = routingTable.get(dest);
@@ -120,7 +124,13 @@ public class NodeBSDVR {
                 // Poisoned reverse: mask this route
                 dv.put(dest, new int[]{INF, 0});
             } else {
-                dv.put(dest, new int[]{entry.getCost(), entry.isActive() ? 1 : 0});
+                int state;
+                if (entry.isActive()) {
+                    state = 1;
+                } else {
+                    state = 0;
+                }
+                dv.put(dest, new int[]{entry.getCost(), state});
             }
         }
         return dv;
@@ -133,8 +143,13 @@ public class NodeBSDVR {
     public Map<String, int[]> createDistanceVector() {
         Map<String, int[]> dv = new HashMap<>();
         for (RouteEntryBSDVR entry : routingTable.values()) {
-            dv.put(entry.getDestination(),
-                    new int[]{entry.getCost(), entry.isActive() ? 1 : 0});
+            int state;
+            if (entry.isActive()) {
+                state = 1;
+            } else {
+                state = 0;
+            }
+            dv.put(entry.getDestination(), new int[]{entry.getCost(), state});
         }
         return dv;
     }
@@ -163,10 +178,12 @@ public class NodeBSDVR {
             int     receivedCost   = e.getValue()[0];
             boolean receivedActive = (e.getValue()[1] == 1);
 
-            // Compute total path cost through sender.
-            int newCost = (receivedCost >= INF)
-                    ? INF
-                    : Math.min(linkCost + receivedCost, INF);
+            int newCost;
+            if (receivedCost >= INF) {
+                newCost = INF;
+            } else {
+                newCost = Math.min(linkCost + receivedCost, INF);
+            }
 
             // An entry can only be active if both the received state is active
             // AND the resulting cost is finite.

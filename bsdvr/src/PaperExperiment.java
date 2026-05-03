@@ -52,7 +52,7 @@ import java.util.*;
 public class PaperExperiment {
 
     // ── configuration ────────────────────────────────────────────────────────
-    static final int   MAX_ROUNDS      = 500;   // cap to terminate CTI loops
+    static final int   MAX_ROUNDS      = 1000;   // cap to terminate CTI loops
     static final int[] NODE_COUNTS     = {5, 10, 15, 20, 25, 30};
     static final int   TRIALS          = 3;     // random topologies per size
     static final int   TARGET_AVG_DEG  = 4;     // 3–5 per the paper
@@ -68,20 +68,8 @@ public class PaperExperiment {
     // =========================================================================
 
     public static void main(String[] args) {
-        printBanner("PAPER EXPERIMENT: TDVR vs BSDVR (Farooq & Yuksel, IEEE LANMAN 2022)");
-        System.out.println("  Node sizes : " + Arrays.toString(NODE_COUNTS));
-        System.out.println("  Trials     : " + TRIALS + " independent random topologies per size");
-        System.out.println("  Avg degree : ~" + TARGET_AVG_DEG);
-        System.out.println("  Max rounds : " + MAX_ROUNDS + " (hard stop for count-to-infinity)");
-        System.out.println();
-
         runSingleLinkFailureExperiment();
         runPartitionCausingFailureExperiment();
-
-        System.out.println();
-        System.out.println("  ✓ Results match paper Figs. 12 & 13:");
-        System.out.println("    Fig. 12 — BSDVR slightly slower / more messages on non-partition failures");
-        System.out.println("    Fig. 13 — TDVR hits count-to-infinity; BSDVR stays fast by orders of magnitude");
     }
 
     // =========================================================================
@@ -89,14 +77,11 @@ public class PaperExperiment {
     // =========================================================================
 
     static void runSingleLinkFailureExperiment() {
-        printBanner("EXPERIMENT 1: Single Link Failures (no partition, Fig. 12)");
-        System.out.println("  Min degree = 2 guarantees each removed link leaves the network connected.");
-        System.out.println();
+        System.out.println("Single Link Failures, no partitions");
 
         // Table header
-        System.out.printf("  %-6s  %20s  %20s  |  %20s  %20s%n",
+        System.out.printf("  %-6s  %20s  %20s  %20s  %20s%n",
                 "Nodes", "TDVR avg rounds", "TDVR avg msgs", "BSDVR avg rounds", "BSDVR avg msgs");
-        System.out.println("  " + dashes(96));
 
         for (int n : NODE_COUNTS) {
             long tdvrRoundsSum = 0, tdvrMsgsSum = 0;
@@ -136,19 +121,13 @@ public class PaperExperiment {
                 }
             }
 
-            System.out.printf("  %-6d  %20.2f  %20.1f  |  %20.2f  %20.1f%n",
+            System.out.printf("  %-6d  %20.2f  %20.1f  %20.2f  %20.1f%n",
                     n,
                     (double) tdvrRoundsSum  / samples,
                     (double) tdvrMsgsSum    / samples,
                     (double) bsdvrRoundsSum / samples,
                     (double) bsdvrMsgsSum   / samples);
         }
-
-        System.out.println("  " + dashes(96));
-        System.out.println("  ↑ BSDVR may send more messages (proactive replies), matching Fig. 12(b).");
-        System.out.println("  ↑ Rounds for BSDVR may be slightly higher due to proactive reply overhead,");
-        System.out.println("    matching Fig. 12(a).");
-        System.out.println();
     }
 
     // =========================================================================
@@ -156,14 +135,10 @@ public class PaperExperiment {
     // =========================================================================
 
     static void runPartitionCausingFailureExperiment() {
-        printBanner("EXPERIMENT 2: Partition-Causing Failures (count-to-infinity, Fig. 13)");
-        System.out.println("  All links of one node are removed simultaneously → network partitions.");
-        System.out.println("  TDVR enters count-to-infinity; BSDVR marks destination INACTIVE quickly.");
-        System.out.println();
+        System.out.println("Partitioned network");
 
-        System.out.printf("  %-6s  %26s  %20s  |  %20s  %20s%n",
+        System.out.printf("  %-6s  %26s  %20s  %20s  %20s%n",
                 "Nodes", "TDVR avg rounds", "TDVR avg msgs", "BSDVR avg rounds", "BSDVR avg msgs");
-        System.out.println("  " + dashes(104));
 
         for (int n : NODE_COUNTS) {
             long tdvrRoundsSum = 0, tdvrMsgsSum = 0;
@@ -204,22 +179,20 @@ public class PaperExperiment {
             }
 
             boolean cti = (tdvrRoundsSum / samples) >= MAX_ROUNDS - 5;
-            String tdvrRoundsStr = cti
-                    ? String.format("≥%d (COUNT-TO-INF!)", MAX_ROUNDS)
-                    : String.format("%.2f", (double) tdvrRoundsSum / samples);
+            String tdvrRoundsStr;
+            if (cti) {
+                tdvrRoundsStr = String.format("Hit max rounds", MAX_ROUNDS);
+            } else {
+                tdvrRoundsStr = String.format("%.2f", (double) tdvrRoundsSum / samples);
+            }
 
-            System.out.printf("  %-6d  %26s  %20.1f  |  %20.2f  %20.1f%n",
+            System.out.printf("  %-6d  %26s  %20.1f  %20.2f  %20.1f%n",
                     n,
                     tdvrRoundsStr,
                     (double) tdvrMsgsSum    / samples,
                     (double) bsdvrRoundsSum / samples,
                     (double) bsdvrMsgsSum   / samples);
         }
-
-        System.out.println("  " + dashes(104));
-        System.out.println("  ↑ TDVR rounds explode (count-to-infinity), matching Fig. 13(a)/(b).");
-        System.out.println("  ↑ BSDVR messages are orders of magnitude fewer, matching Fig. 13(c).");
-        System.out.println();
     }
 
     // =========================================================================
@@ -471,20 +444,5 @@ public class PaperExperiment {
             }
         }
         return snap;
-    }
-
-    // =========================================================================
-    // DISPLAY UTILITIES
-    // =========================================================================
-
-    static void printBanner(String title) {
-        String bar = "=".repeat(70);
-        System.out.println("\n" + bar);
-        System.out.println("  " + title);
-        System.out.println(bar);
-    }
-
-    static String dashes(int n) {
-        return "-".repeat(n);
     }
 }

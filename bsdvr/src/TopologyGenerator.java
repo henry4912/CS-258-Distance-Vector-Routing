@@ -103,7 +103,12 @@ public class TopologyGenerator {
         for (String a : adj.keySet()) {
             for (Map.Entry<String, Integer> e : adj.get(a).entrySet()) {
                 String b   = e.getKey();
-                String key = a.compareTo(b) < 0 ? a + "|" + b : b + "|" + a;
+                String key;
+                if (a.compareTo(b) < 0) {
+                    key = a + "|" + b;
+                } else {
+                    key = b + "|" + a;
+                }
                 if (seen.add(key)) {
                     edges.add(new String[]{a, b, String.valueOf(e.getValue())});
                 }
