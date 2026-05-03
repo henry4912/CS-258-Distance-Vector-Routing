@@ -1,55 +1,6 @@
 import java.util.*;
 
-/**
- * PaperExperiment — replicates the scaled evaluation from:
- *   Farooq & Yuksel, "Distance Vector Routing in Partitioned Networks," IEEE LANMAN 2022
- *
- * ─────────────────────────────────────────────────────────────────────────────
- * WHAT THE PAPER ACTUALLY TESTS  (Section V)
- * ─────────────────────────────────────────────────────────────────────────────
- *
- * Experiment 1 – Single link failures (Fig. 12)
- *   • Random topologies of 5, 10, 15, 20, 25, 30 nodes
- *   • Min degree 2 → no single link removal causes a partition
- *   • Fail each link in turn, let both protocols re-converge
- *   • Measure: convergence rounds (proxy for time), messages sent
- *   • Expected result: BSDVR uses slightly MORE messages than TDVR
- *     (proactive replies) but converges fine
- *
- * Experiment 2 – Partition-causing failures (Fig. 13)
- *   • Same topology sizes
- *   • Fail ALL links of one node at once → partition the rest of the network
- *   • Measure: convergence rounds, messages sent
- *   • Expected result: TDVR count-to-infinity (rounds >> MAX), BSDVR converges
- *     fast with an order-of-magnitude fewer messages
- *
- * ─────────────────────────────────────────────────────────────────────────────
- * SIMULATION MODEL
- * ─────────────────────────────────────────────────────────────────────────────
- *
- * We use synchronous, SNAPSHOT-BASED rounds (Jacobi style):
- *   1. All nodes capture their DVs at the START of each round.
- *   2. Each node processes those snapshots and updates its own table.
- *   3. Repeat until no table changes (converged) or MAX_ROUNDS exceeded.
- *
- * This faithfully reproduces count-to-infinity: a node may still see another
- * node's pre-failure DV in round 1, exactly as in an async network.
- *
- * Control-traffic bytes are estimated as:
- *   TDVR message = 8-byte header + K × 8 bytes  (K entries × {dest,cost})
- *   BSDVR message = 8-byte header + K × 9 bytes  (+ 1 byte state flag)
- *
- * ─────────────────────────────────────────────────────────────────────────────
- * HOW TO RUN
- * ─────────────────────────────────────────────────────────────────────────────
- *   javac *.java
- *   java PaperExperiment
- *
- * All source files must be in the same directory:
- *   NodeDVR.java, NodeBSDVR.java, RouteEntryDVR.java, RouteEntryBSDVR.java,
- *   TopologyGenerator.java, PaperExperiment.java
- */
-public class PaperExperiment {
+public class Main {
 
     // ── configuration ────────────────────────────────────────────────────────
     static final int   MAX_ROUNDS      = 1000;   // cap to terminate CTI loops
