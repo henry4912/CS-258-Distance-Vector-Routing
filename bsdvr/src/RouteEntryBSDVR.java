@@ -1,12 +1,3 @@
-/**
- * RouteEntryBSDVR — a single entry in the BSDVR distance-vector table.
- *
- * The key extension over TDVR is the boolean `active` field (the "binary state"
- * from the paper).  An ACTIVE entry means the path is currently reachable;
- * an INACTIVE entry means the path was once known but is now disconnected.
- * Keeping inactive entries (instead of deleting them) lets the protocol detect
- * loops and avoid count-to-infinity during partition-causing failures.
- */
 public class RouteEntryBSDVR {
 
     public static final int INF = 9999;
@@ -14,7 +5,7 @@ public class RouteEntryBSDVR {
     private final String destination;
     private String      nextHop;
     private int         cost;
-    private boolean     active;   // true = ACTIVE (reachable), false = INACTIVE
+    private boolean     active;   // true = ACTIVE, false = INACTIVE
 
     public RouteEntryBSDVR(String destination, String nextHop, int cost, boolean active) {
         this.destination = destination;
@@ -23,7 +14,7 @@ public class RouteEntryBSDVR {
         this.active      = active;
     }
 
-    // ---- getters ----
+    //getters
     public String getDestination() {
         return destination;
     }
@@ -40,7 +31,7 @@ public class RouteEntryBSDVR {
         return active;
     }
 
-    // ---- setters ----
+    //setters
     public void setNextHop(String nextHop) {
         this.nextHop = nextHop;
     }

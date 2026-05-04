@@ -14,23 +14,14 @@ public class Main {
     static final int TDVR_BYTES_ENTRY   = 8;  // {dest(4) + cost(4)}
     static final int BSDVR_BYTES_ENTRY  = 9;  // {dest(4) + cost(4) + state(1)}
 
-    // =========================================================================
-    // MAIN
-    // =========================================================================
-
     public static void main(String[] args) {
         runSingleLinkFailureExperiment();
         runPartitionCausingFailureExperiment();
     }
 
-    // =========================================================================
-    // EXPERIMENT 1 — Single Link Failures
-    // =========================================================================
-
     static void runSingleLinkFailureExperiment() {
         System.out.println("Single Link Failures, no partitions");
 
-        // Table header
         System.out.printf("  %-6s  %20s  %20s  %20s  %20s%n",
                 "Nodes", "TDVR avg rounds", "TDVR avg msgs", "BSDVR avg rounds", "BSDVR avg msgs");
 
@@ -42,7 +33,6 @@ public class Main {
             for (int trial = 0; trial < TRIALS; trial++) {
                 Random rng = new Random(BASE_SEED + (long) n * 1000 + trial);
 
-                // Min-degree 2: no single edge removal creates a partition
                 Map<String, Map<String, Integer>> topo =
                         TopologyGenerator.generate(n, TARGET_AVG_DEG, 2, rng);
                 List<String[]> edges = TopologyGenerator.getEdges(topo);
@@ -50,16 +40,16 @@ public class Main {
                 for (String[] edge : edges) {
                     String eA = edge[0], eB = edge[1];
 
-                    // ── TDVR: initial convergence, then fail one link ──────
+                    //TDVR
                     Map<String, NodeDVR> tdvrNet = buildTDVR(topo);
-                    convergeTDVR(tdvrNet, topo);      // warm up to stable state
+                    convergeTDVR(tdvrNet, topo);
                     tdvrNet.get(eA).removeNeighbor(eB);
                     tdvrNet.get(eB).removeNeighbor(eA);
                     long[] t = measureTDVR(tdvrNet, topo);
                     tdvrRoundsSum += t[0];
                     tdvrMsgsSum   += t[1];
 
-                    // ── BSDVR: initial convergence, then fail one link ─────
+                    ///BSDVR, fail 1 link
                     Map<String, NodeBSDVR> bsdvrNet = buildBSDVR(topo);
                     convergeBSDVR(bsdvrNet, topo);
                     bsdvrNet.get(eA).failLink(eB);
@@ -81,10 +71,6 @@ public class Main {
         }
     }
 
-    // =========================================================================
-    // EXPERIMENT 2 — Partition-Causing Failures
-    // =========================================================================
-
     static void runPartitionCausingFailureExperiment() {
         System.out.println("Partitioned network");
 
@@ -99,7 +85,6 @@ public class Main {
             for (int trial = 0; trial < TRIALS; trial++) {
                 Random rng = new Random(BASE_SEED + (long) n * 1000 + trial + 99999L);
 
-                // Min-degree 1 is fine; we deliberately partition by removing all links
                 Map<String, Map<String, Integer>> topo =
                         TopologyGenerator.generate(n, TARGET_AVG_DEG, 1, rng);
                 List<String> nodes = TopologyGenerator.getNodes(topo);
@@ -107,7 +92,7 @@ public class Main {
                 for (String failNode : nodes) {
                     Set<String> nbsOfFailed = new HashSet<>(topo.get(failNode).keySet());
 
-                    // ── TDVR: partition by severing all links of failNode ──
+                    //TDVR
                     Map<String, NodeDVR> tdvrNet = buildTDVR(topo);
                     convergeTDVR(tdvrNet, topo);
                     for (String nb : nbsOfFailed) tdvrNet.get(nb).removeNeighbor(failNode);
@@ -116,7 +101,7 @@ public class Main {
                     tdvrRoundsSum += t[0];
                     tdvrMsgsSum   += t[1];
 
-                    // ── BSDVR: partition by severing all links of failNode ─
+                    //BSDVR
                     Map<String, NodeBSDVR> bsdvrNet = buildBSDVR(topo);
                     convergeBSDVR(bsdvrNet, topo);
                     for (String nb : nbsOfFailed) bsdvrNet.get(nb).failLink(failNode);
@@ -146,11 +131,6 @@ public class Main {
         }
     }
 
-    // =========================================================================
-    // NETWORK CONSTRUCTION
-    // =========================================================================
-
-    /** Builds a fresh TDVR node map from the given topology. */
     static Map<String, NodeDVR> buildTDVR(Map<String, Map<String, Integer>> topo) {
         Map<String, NodeDVR> net = new LinkedHashMap<>();
         for (String node : topo.keySet()) net.put(node, new NodeDVR(node));
@@ -160,7 +140,6 @@ public class Main {
         return net;
     }
 
-    /** Builds a fresh BSDVR node map from the given topology. */
     static Map<String, NodeBSDVR> buildBSDVR(Map<String, Map<String, Integer>> topo) {
         Map<String, NodeBSDVR> net = new LinkedHashMap<>();
         for (String node : topo.keySet()) net.put(node, new NodeBSDVR(node));
@@ -170,11 +149,6 @@ public class Main {
         return net;
     }
 
-    // =========================================================================
-    // INITIAL CONVERGENCE (warm-up before failure injection)
-    // =========================================================================
-
-    /** Runs TDVR rounds until stable. Uses snapshot semantics. */
     static void convergeTDVR(Map<String, NodeDVR> net, Map<String, Map<String, Integer>> topo) {
         boolean changed = true;
         int round = 0;
@@ -190,7 +164,6 @@ public class Main {
         }
     }
 
-    /** Runs BSDVR rounds until stable. Uses snapshot semantics. */
     static void convergeBSDVR(Map<String, NodeBSDVR> net, Map<String, Map<String, Integer>> topo) {
         boolean changed = true;
         int round = 0;
@@ -208,15 +181,9 @@ public class Main {
         }
     }
 
-    // =========================================================================
-    // POST-FAILURE CONVERGENCE + METRIC MEASUREMENT
-    // =========================================================================
-
     /**
-     * Runs TDVR after a single-link failure and measures:
-     *   [0] rounds to convergence (or MAX_ROUNDS on count-to-infinity)
-     *   [1] total messages (DV advertisements) sent
-     */
+     * Runs TDVR after a single-link failure 
+     **/
     static long[] measureTDVR(Map<String, NodeDVR> net, Map<String, Map<String, Integer>> topo) {
         long msgs = 0;
         boolean changed = true;
@@ -242,7 +209,7 @@ public class Main {
     }
 
     /**
-     * Runs BSDVR after a single-link failure and measures the same metrics.
+     * Runs BSDVR after a single-link failure
      */
     static long[] measureBSDVR(Map<String, NodeBSDVR> net, Map<String, Map<String, Integer>> topo) {
         long msgs = 0;
@@ -269,8 +236,7 @@ public class Main {
     }
 
     /**
-     * TDVR measurement after partition: failNode has already been removed from net.
-     * Measures how long the remaining network takes to re-converge (or CTI).
+     * TDVR measurement after partition
      */
     static long[] measureTDVRPartition(Map<String, NodeDVR> net, Map<String, Map<String, Integer>> topo, String failNode) {
         long msgs = 0;
@@ -300,33 +266,7 @@ public class Main {
     }
 
     /**
-     * BSDVR measurement after partition: failNode has already been removed from net.
-     *
-     * Fix: snapshot post-processing forces INACTIVE for known-dead routes.
-     *
-     * Why the change? In a synchronous simulation, stale ACTIVE snapshots cause
-     * BSDVR to briefly oscillate the ACTIVE/INACTIVE flag on routes to the dead
-     * node — a harmless but never-ending "changed=true" loop under the old check.
-     * What we actually care about is whether costs are still climbing (TDVR's
-     * count-to-infinity) vs. quickly settling (BSDVR's INACTIVE propagation).
-     * Tracking cost increases cleanly separates the two behaviours.
-     */
-    /**
-     * BSDVR measurement after partition: failNode has already been removed from net.
-     *
-     * Uses Gauss-Seidel (live, non-snapshot) updates rather than the Jacobi
-     * (snapshot) style used everywhere else. Why:
-     *
-     * With snapshot semantics, a node that just went INACTIVE still has an ACTIVE
-     * snapshot frozen from the start of the round. Neighbours see that stale ACTIVE
-     * and re-activate their own INACTIVE entry — an infinite flip-flop that never
-     * converges even though BSDVR should settle in O(diameter) rounds.
-     *
-     * BSDVR does not suffer count-to-infinity (that's TDVR's problem), so using
-     * live DVs is safe: each node reads its neighbour's *current* routing table,
-     * meaning INACTIVE signals propagate immediately within a round and cannot be
-     * overwritten by stale ACTIVE snapshots. This faithfully models the async
-     * real-world behaviour where INACTIVE messages are consumed before stale ACTIVEs.
+     * BSDVR measurement after partition
      */
     static long[] measureBSDVRPartition(Map<String, NodeBSDVR> net, Map<String, Map<String, Integer>> topo, String failNode) {
         long msgs = 0;
@@ -346,12 +286,6 @@ public class Main {
                     Map<String, int[]> dv = net.get(nb).createDistanceVectorFor(node);
                     msgs++;
 
-                    // KEY FIX: once this node considers failNode INACTIVE, suppress
-                    // any incoming ACTIVE advertisement for it. A partitioned
-                    // destination can never legitimately become reachable again, so
-                    // INACTIVE is a terminal state. In the real async protocol this
-                    // is enforced by the Pending Reply Timer (INACTIVE arrives first);
-                    // here we enforce it explicitly so the sync simulation converges.
                     if (!net.get(node).isActiveTo(failNode) && dv.containsKey(failNode)) {
                         dv = new HashMap<>(dv); // don't mutate the live DV
                         dv.put(failNode, new int[]{NodeBSDVR.INF, 0});
@@ -364,25 +298,12 @@ public class Main {
         return new long[]{round, msgs};
     }
 
-    // =========================================================================
-    // SNAPSHOT HELPERS
-    // =========================================================================
-
-    /**
-     * Captures a complete snapshot of all TDVR distance vectors.
-     * Snapshot semantics: all updates in a round use START-of-round DVs,
-     * which prevents fast in-round propagation from masking count-to-infinity.
-     */
     static Map<String, Map<String, Integer>> snapshotTDVR(Map<String, NodeDVR> net) {
         Map<String, Map<String, Integer>> snap = new HashMap<>();
         for (String n : net.keySet()) snap.put(n, net.get(n).createDistanceVector());
         return snap;
     }
 
-    /**
-     * Captures BSDVR DVs per directed edge (src → dest) with poisoned reverse applied.
-     * Key format: "senderName->receiverName"
-     */
     static Map<String, Map<String, int[]>> snapshotBSDVR(
             Map<String, NodeBSDVR> net,
             Map<String, Map<String, Integer>> topo) {
