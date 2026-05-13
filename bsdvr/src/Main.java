@@ -1,3 +1,4 @@
+import java.io.*;
 import java.util.*;
 
 public class Main {
@@ -14,17 +15,20 @@ public class Main {
     static final int TDVR_BYTES_ENTRY   = 8;  // {dest(4) + cost(4)}
     static final int BSDVR_BYTES_ENTRY  = 9;  // {dest(4) + cost(4) + state(1)}
 
-    public static void main(String[] args) {
-        runSingleLinkFailureExperiment();
-        runPartitionCausingFailureExperiment();
+    public static void main(String[] args) throws IOException{
+        singleLinkFailure();
+        partitionFailure();
     }
 
-    static void runSingleLinkFailureExperiment() {
+    static void singleLinkFailure() throws IOException{
         System.out.println("Single Link Failures, no partitions");
 
         System.out.printf("  %-6s  %20s  %20s  %20s  %20s%n",
                 "Nodes", "TDVR avg rounds", "TDVR avg msgs", "BSDVR avg rounds", "BSDVR avg msgs");
 
+        ArrayList<Long> tdvrMsgs = new ArrayList<>();
+        ArrayList<Long> bsdvrMsgs = new ArrayList<>();
+        
         for (int n : NODE_COUNTS) {
             long tdvrRoundsSum = 0, tdvrMsgsSum = 0;
             long bsdvrRoundsSum = 0, bsdvrMsgsSum = 0;
@@ -68,14 +72,29 @@ public class Main {
                     (double) tdvrMsgsSum    / samples,
                     (double) bsdvrRoundsSum / samples,
                     (double) bsdvrMsgsSum   / samples);
+            
+            tdvrMsgs.add(tdvrMsgsSum);
+            bsdvrMsgs.add(bsdvrMsgsSum);
         }
+
+        FileWriter w = new FileWriter("linkfailure.csv");
+        w.write("num_nodes dvr_avg_msgs bsdvr_avg_msgs\n");
+
+        for (int i = 0; i < tdvrMsgs.size(); i++) {
+            w.write(String.valueOf(NODE_COUNTS[i]) + " " + String.valueOf(tdvrMsgs.get(i)) + " " + String.valueOf(bsdvrMsgs.get(i) + "\n"));
+        }
+
+        w.close();
     }
 
-    static void runPartitionCausingFailureExperiment() {
+    static void partitionFailure() throws IOException {
         System.out.println("Partitioned network");
 
         System.out.printf("  %-6s  %26s  %20s  %20s  %20s%n",
                 "Nodes", "TDVR avg rounds", "TDVR avg msgs", "BSDVR avg rounds", "BSDVR avg msgs");
+
+        ArrayList<Long> tdvrMsgs = new ArrayList<>();
+        ArrayList<Long> bsdvrMsgs = new ArrayList<>();
 
         for (int n : NODE_COUNTS) {
             long tdvrRoundsSum = 0, tdvrMsgsSum = 0;
@@ -128,7 +147,19 @@ public class Main {
                     (double) tdvrMsgsSum    / samples,
                     (double) bsdvrRoundsSum / samples,
                     (double) bsdvrMsgsSum   / samples);
+            
+            tdvrMsgs.add(tdvrMsgsSum);
+            bsdvrMsgs.add(bsdvrMsgsSum);
         }
+
+        FileWriter w = new FileWriter("partition.csv");
+        w.write("num_nodes dvr_avg_msgs bsdvr_avg_msgs\n");
+
+        for (int i = 0; i < tdvrMsgs.size(); i++) {
+            w.write(String.valueOf(NODE_COUNTS[i]) + " " + String.valueOf(tdvrMsgs.get(i)) + " " + String.valueOf(bsdvrMsgs.get(i) + "\n"));
+        }
+
+        w.close();
     }
 
     static Map<String, NodeDVR> buildTDVR(Map<String, Map<String, Integer>> topo) {
