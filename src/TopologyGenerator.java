@@ -1,16 +1,6 @@
 import java.util.*;
 
 public class TopologyGenerator {
-
-    /**
-     * Generate a random connected topology.
-     *
-     * @param nodeCount      number of nodes
-     * @param targetAvgDeg   target average degree (paper uses 3–5)
-     * @param minDegree      minimum degree per node (use 2 for single-link experiments)
-     * @param rng            seeded Random for reproducibility
-     * @return adjacency map: nodeName → (neighborName → linkCost)
-     */
     public static Map<String, Map<String, Integer>> generate(
             int nodeCount, int targetAvgDeg, int minDegree, Random rng) {
 
@@ -33,7 +23,7 @@ public class TopologyGenerator {
         }
 
         int targetEdges = (nodeCount * targetAvgDeg) / 2;
-        int currentEdges = nodeCount - 1;    // spanning tree has exactly n-1 edges
+        int currentEdges = nodeCount - 1;
 
         for (int attempt = 0; attempt < targetEdges * 30 && currentEdges < targetEdges; attempt++) {
             String a = nodes.get(rng.nextInt(nodeCount));

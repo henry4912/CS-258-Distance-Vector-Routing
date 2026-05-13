@@ -10,7 +10,6 @@ public class NodeBSDVR {
 
     private final Map<String, RouteEntryBSDVR> routingTable;
 
-    // -------------------------------------------------------------------------
     public NodeBSDVR(String name) {
         this.name         = name;
         this.neighbors    = new HashMap<>();
@@ -90,16 +89,6 @@ public class NodeBSDVR {
         return dv;
     }
 
-
-    /**
-     * Processes a distance-vector update from {@code senderName}.
-     *
-     * Implements the four cases of Table I from the BSDVR paper.
-     *
-     * @param senderName  which neighbour sent the update
-     * @param senderDV    their distance vector: dest → int[]{cost, state}
-     * @return true if any entry in this node's routing table changed
-     */
     public boolean updateFromNeighbor(String senderName, Map<String, int[]> senderDV) {
         boolean changed = false;
 
@@ -108,7 +97,7 @@ public class NodeBSDVR {
 
         for (Map.Entry<String, int[]> e : senderDV.entrySet()) {
             String dest = e.getKey();
-            if (dest.equals(name)) continue;  // skip self-advertisement
+            if (dest.equals(name)) continue; 
 
             int     receivedCost   = e.getValue()[0];
             boolean receivedActive = (e.getValue()[1] == 1);
@@ -120,8 +109,6 @@ public class NodeBSDVR {
                 newCost = Math.min(linkCost + receivedCost, INF);
             }
 
-            // An entry can only be active if both the received state is active
-            // AND the resulting cost is finite.
             boolean newEffectiveActive = receivedActive && (newCost < INF);
 
             RouteEntryBSDVR current = routingTable.get(dest);
