@@ -2,6 +2,8 @@
 
 Term project that compares traditional distance vector routing with binary state distance vector routing.
 
+To run the project, run src/Main.java.
+
 **Course:** CS 258  
 **Team:** Arun Murugan, Henry Ha
 
